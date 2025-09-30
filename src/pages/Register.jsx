@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { supabase } from '../supabaseClient';
-import  './Register.css';
+import './Register.css';
+
 function Register() {
   const [phoneNumber, setPhoneNumber] = useState('+998');
   const [location, setLocation] = useState(null); // { lat, lng }
@@ -13,7 +14,7 @@ function Register() {
     return lat >= 37 && lat <= 46 && lng >= 56 && lng <= 74;
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     setError('');
 
     // Telefon validatsiyasi
@@ -41,20 +42,24 @@ function Register() {
         setLocation({ lat, lng });
         console.log('Lokatsiya:', lat, lng);
 
-        // Supabase ga saqlash
-        const { error: dbError } = await supabase.from('profiles').upsert({
-          id: telegramUser?.id || 'temp_id', // Telegram ID yoki auth ID
-          phone_number: phoneNumber,
-          telegram_phone: telegramUser?.phone_number || null,
-          location_lat: lat,
-          location_lng: lng,
-        });
+        // Supabase ga saqlash (await ni callback ichida ishlatish)
+        const saveUserData = async () => {
+          const { error: dbError } = await supabase.from('profiles').upsert({
+            id: telegramUser?.id || 'temp_id', // Telegram ID yoki auth ID
+            phone_number: phoneNumber,
+            telegram_phone: telegramUser?.phone_number || null,
+            location_lat: lat,
+            location_lng: lng,
+          });
 
-        if (dbError) {
-          setError('Ma‘lumotlarni saqlashda xato: ' + dbError.message);
-        } else {
-          alert('Ro‘yxatdan o‘tdingiz! Lokatsiya saqlandi.');
-        }
+          if (dbError) {
+            setError('Ma‘lumotlarni saqlashda xato: ' + dbError.message);
+          } else {
+            alert('Ro‘yxatdan o‘tdingiz! Lokatsiya saqlandi.');
+          }
+        };
+
+        saveUserData(); // Asinxron funksiyani chaqirish
       });
     });
   };
