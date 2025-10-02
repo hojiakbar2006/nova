@@ -1,16 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
   useEffect(() => {
     // Telegram Web App ni ishga tushirish
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
+    } else {
+      console.warn('Telegram Web App konteksti topilmadi. Localhost rejimida ishlaydi.');
     }
 
     // Localhost tekshiruvi
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const telegramUser = window.Telegram?.WebApp.initDataUnsafe?.user;
+    const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
     const setupUser = async () => {
       let userId = null;
@@ -38,9 +44,9 @@ function App() {
         const userData = {
           id: telegramUser.id,
           username: telegramUser.username || 'telegram_user',
-          phone_number: telegramUser.phone_number || '+998000000000', // Agar yo‘q bo‘lsa, default
+          phone_number: telegramUser.phone_number || '+998000000000',
           telegram_phone: telegramUser.phone_number || null,
-          location_lat: null, // Lokatsiyani keyin olish mumkin
+          location_lat: null,
           location_lng: null,
         };
 
@@ -53,24 +59,33 @@ function App() {
         userId = telegramUser.id;
       }
 
-      // Keyingi sahifaga o‘tish yoki boshqa logika
+      // Foydalanuvchi tayyor bo'lsa, Register sahifasiga o'tish
       if (userId) {
-        // Masalan, ro‘yxatdan o‘tish sahifasiga yo‘naltirish
-        console.log('Foydalanuvchi tayyor:', userId);
+        navigate('/register');
+      } else {
+        console.error('Foydalanuvchi aniqlanmadi!');
       }
+      setIsLoading(false); // Yuklanish tugadi
     };
 
-    setupUser();
-  }, []);
+    setupUser().catch((error) => {
+      console.error('Setup xatosi:', error.message);
+      setIsLoading(false);
+    });
+  }, [navigate]);
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">Marketplace</h1>
-        <p className="mt-2">Iltimos, kuting... Foydalanuvchi tekshirilmoqda.</p>
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>Marketplace</h1>
+          <p style={{ marginTop: '10px', color: '#666' }}>Iltimos, kuting... Foydalanuvchi tekshirilmoqda.</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null; // Yuklanish tugagach, Register ga o'tadi
 }
 
 export default App;
