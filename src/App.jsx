@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Routes, Route } from 'react-router-dom'; // Routes va Route import qilindi
+import { v4 as uuidv4 } from 'uuid'; // UUID uchun
+import Register from './pages/Register';
+import ErrorBoundary from './components/ErrorBoundary'; // Error Boundary uchun (yaratiladi)
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -11,7 +13,7 @@ function App() {
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
     } else {
-      console.warn('Telegram Web App konteksti topilmadi. Localhost rejimida ishlaydi.');
+      console.log('Telegram Web App konteksti topilmadi. Localhost rejimida ishlaydi.');
     }
 
     // Localhost tekshiruvi
@@ -22,9 +24,9 @@ function App() {
       let userId = null;
 
       if (isLocalhost) {
-        // Localhost uchun fake user yaratish
+        // Localhost uchun fake user yaratish (UUID bilan)
         const fakeUser = {
-          id: 'fake-user-123',
+          id: uuidv4(), // Avtomatik UUID yaratish
           username: 'test_user',
           phone_number: '+998901234567',
           telegram_phone: null,
@@ -42,7 +44,7 @@ function App() {
       } else if (telegramUser) {
         // Telegram bot orqali kirgan foydalanuvchi
         const userData = {
-          id: telegramUser.id,
+          id: telegramUser.id, // Telegram ID odatda string, UUID sifatida ishlaydi
           username: telegramUser.username || 'telegram_user',
           phone_number: telegramUser.phone_number || '+998000000000',
           telegram_phone: telegramUser.phone_number || null,
@@ -65,27 +67,24 @@ function App() {
       } else {
         console.error('Foydalanuvchi aniqlanmadi!');
       }
-      setIsLoading(false); // Yuklanish tugadi
     };
 
     setupUser().catch((error) => {
       console.error('Setup xatosi:', error.message);
-      setIsLoading(false);
     });
   }, [navigate]);
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>Marketplace</h1>
-          <p style={{ marginTop: '10px', color: '#666' }}>Iltimos, kuting... Foydalanuvchi tekshirilmoqda.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return null; // Yuklanish tugagach, Register ga o'tadi
+  return (
+    <div id="app">
+      <ErrorBoundary> {/* Error Boundary qo'shildi */}
+        <Routes>
+          <Route path="/" element={<div>Loading...</div>} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </ErrorBoundary>
+      <main></main>
+    </div>
+  );
 }
 
 export default App;
